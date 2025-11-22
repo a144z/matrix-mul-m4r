@@ -452,38 +452,24 @@ int main() {
         m4r_layer.forward(input);
         m4r_layer.forward_quantized(input_quantized);
         
-        std::vector<float> gemm_output(dim);
         std::vector<float> pi_output(dim);
 
         // 5. Benchmarking All Methods
         const int iterations = 50;  // All methods run 50 iterations for fair comparison
-        double ops = 2.0 * dim * dim; // Standard ops for comparison
         
         std::cout << "\n=== Running Benchmarks (50 iterations each) ===" << std::endl;
         
-        std::cout << "\n--- 1. Baseline: Dense GEMM (Realistic Optimized BLAS-like) ---" << std::endl;
+        std::cout << "\n--- 1. Baseline: PowerInfer (Realistic: Predictor Overhead + Neuron-Level Sparsity) ---" << std::endl;
         auto start = std::chrono::high_resolution_clock::now();
-        for (int i = 0; i < iterations; ++i) {
-            gemm_optimized(weights, input, gemm_output, dim);
-        }
-        auto end = std::chrono::high_resolution_clock::now();
-        std::chrono::duration<double> elapsed = end - start;
-        double avg_gemm = elapsed.count() / iterations;
-        std::cout << "Average Time: " << avg_gemm * 1000.0 << " ms" << std::endl;
-        std::cout << "GFLOPS: " << (ops * iterations) / elapsed.count() / 1e9 << std::endl;
-
-        std::cout << "\n--- 2. Baseline: PowerInfer (Realistic: Predictor Overhead + Neuron-Level Sparsity) ---" << std::endl;
-        start = std::chrono::high_resolution_clock::now();
         for (int i = 0; i < iterations; ++i) {
             powerinfer_full(weights, input, pi_output, dim);
         }
-        end = std::chrono::high_resolution_clock::now();
-        elapsed = end - start;
+        auto end = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double> elapsed = end - start;
         double avg_pi = elapsed.count() / iterations;
         std::cout << "Average Time: " << avg_pi * 1000.0 << " ms" << std::endl;
-        std::cout << "Speedup vs GEMM: " << avg_gemm / avg_pi << "x" << std::endl;
 
-        std::cout << "\n--- 3. Our DSTA (Realistic: Sparsity Detection + Sparse Ternary AVX) ---" << std::endl;
+        std::cout << "\n--- 2. Our DSTA (Realistic: Sparsity Detection + Sparse Ternary AVX) ---" << std::endl;
         start = std::chrono::high_resolution_clock::now();
         for (int i = 0; i < iterations; ++i) {
             volatile auto res = dsta_layer.forward(input);
@@ -492,10 +478,9 @@ int main() {
         elapsed = end - start;
         double avg_dsta = elapsed.count() / iterations;
         std::cout << "Average Time: " << avg_dsta * 1000.0 << " ms" << std::endl;
-        std::cout << "Speedup vs GEMM: " << avg_gemm / avg_dsta << "x" << std::endl;
         std::cout << "Speedup vs PowerInfer: " << avg_pi / avg_dsta << "x" << std::endl;
 
-        std::cout << "\n--- 4. Our M4R (Realistic: Quantization Overhead + Lattice Lookup) ---" << std::endl;
+        std::cout << "\n--- 3. Our M4R (Realistic: Quantization Overhead + Lattice Lookup) ---" << std::endl;
         start = std::chrono::high_resolution_clock::now();
         for (int i = 0; i < iterations; ++i) {
             volatile auto res = m4r_layer.forward(input);
@@ -504,10 +489,10 @@ int main() {
         elapsed = end - start;
         double avg_m4r = elapsed.count() / iterations;
         std::cout << "Average Time: " << avg_m4r * 1000.0 << " ms" << std::endl;
-        std::cout << "Speedup vs GEMM: " << avg_gemm / avg_m4r << "x" << std::endl;
+        std::cout << "Speedup vs PowerInfer: " << avg_pi / avg_m4r << "x" << std::endl;
         std::cout << "Speedup vs DSTA: " << avg_dsta / avg_m4r << "x" << std::endl;
 
-        std::cout << "\n--- 5. Our M4R (Best Case: Pre-Quantized Input, No Quantization Overhead) ---" << std::endl;
+        std::cout << "\n--- 4. Our M4R (Best Case: Pre-Quantized Input, No Quantization Overhead) ---" << std::endl;
         start = std::chrono::high_resolution_clock::now();
         for (int i = 0; i < iterations; ++i) {
             volatile auto res = m4r_layer.forward_quantized(input_quantized);
@@ -516,7 +501,7 @@ int main() {
         elapsed = end - start;
         double avg_m4r_pure = elapsed.count() / iterations;
         std::cout << "Average Time: " << avg_m4r_pure * 1000.0 << " ms" << std::endl;
-        std::cout << "Speedup vs GEMM: " << avg_gemm / avg_m4r_pure << "x" << std::endl;
+        std::cout << "Speedup vs PowerInfer: " << avg_pi / avg_m4r_pure << "x" << std::endl;
         std::cout << "Speedup vs DSTA: " << avg_dsta / avg_m4r_pure << "x" << std::endl;
         
         std::cout << "\n=== Benchmark Complete ===" << std::endl;
