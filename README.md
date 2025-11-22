@@ -23,6 +23,8 @@
 
 ### Benchmark Results
 
+**Primary Results (4096×4096 Matrix)**:
+
 | Method | Description | Avg Latency (ms) | Speedup (vs GEMM) | Speedup (vs DSTA) | GFLOPS |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | **Dense GEMM (Optimized)** | AVX-512/AVX2 SIMD Optimized (Production-like) | 3.602 | 1.0x | - | 9.33 |
@@ -30,6 +32,15 @@
 | **DSTA** | Sparse Ternary Accumulation (AVX-Optimized) | 0.260 | 13.8x | 1.0x (Baseline) | 129.1 |
 | **M4R (Hybrid)** | **Lattice Lookup + Quantization** | **0.067** | **53.7x** | **3.88x** | **500** |
 | **M4R (Pure)** | **Lattice Lookup (Pre-Quantized)** | **0.066** | **54.7x** | **3.95x** | **509** |
+
+**Performance Across Matrix Sizes**:
+
+| Size | GEMM (ms) | PowerInfer (ms) | DSTA (ms) | M4R Pure (ms) | M4R vs GEMM | M4R vs DSTA |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| 1024×1024 | 0.177 | 0.014 | 0.016 | 0.003 | **55.0x** | **5.0x** |
+| 2048×2048 | 0.961 | 0.079 | 0.075 | 0.015 | **64.7x** | **5.0x** |
+| 4096×4096 | 3.602 | 0.372 | 0.260 | 0.066 | **54.7x** | **4.0x** |
+| 8192×8192 | 17.940 | 1.807 | 0.886 | 0.346 | **51.9x** | **2.6x** |
 
 > **Key Results**: 
 > - **M4R achieves 54.7x speedup** over dense GEMM and **3.95x speedup** over DSTA (4096×4096)
