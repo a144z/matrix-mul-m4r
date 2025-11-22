@@ -5,7 +5,7 @@
 [![C++20](https://img.shields.io/badge/C%2B%2B-20-blue.svg)](https://en.cppreference.com/w/cpp/20)
 [![Platform: Windows/Linux](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-lightgrey.svg)]()
 
-> **Abstract**: This repository implements two State-of-the-Art (SOTA) kernels for accelerating Ternary Weight Networks (TWN) on CPUs: **DSTA** (Dynamic Sparse Ternary Accumulation) and **M4R** (Method of Four Russians). By eliminating floating-point multiplication and leveraging dynamic sparsity, we achieve **80x speedups** over dense FP32 baselines and **4.3x speedups** over optimized sparse kernels.
+> **Abstract**: This repository implements two State-of-the-Art (SOTA) kernels for accelerating Ternary Weight Networks (TWN) on CPUs: **DSTA** (Dynamic Sparse Ternary Accumulation) and **M4R** (Method of Four Russians). By eliminating floating-point multiplication and leveraging dynamic sparsity, we achieve **62x speedups** over dense FP32 baselines and **3.9x speedups** over optimized sparse kernels.
 
 ---
 
@@ -23,17 +23,17 @@
 
 | Method | Description | Avg Latency (ms) | Speedup (vs GEMM) | Speedup (vs DSTA) | GFLOPS |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Dense GEMM (Optimized)** | AVX-512/AVX2 SIMD Optimized (Production-like) | 5.280 | 1.0x | - | 6.36 |
-| **PowerInfer (Full)** | Predictor Head + Neuron-Level Sparsity + AVX | 0.437 | 12.1x | 0.64x | 76.8 |
-| **DSTA** | Sparse Ternary Accumulation (AVX-Optimized) | 0.280 | 18.8x | 1.0x (Baseline) | 119.8 |
-| **M4R (Hybrid)** | **Lattice Lookup + Quantization** | **0.065** | **80.8x** | **4.29x** | **515** |
-| **M4R (Pure)** | **Lattice Lookup (Pre-Quantized)** | **0.067** | **79.4x** | **4.21x** | **503** |
+| **Dense GEMM (Optimized)** | AVX-512/AVX2 SIMD Optimized (Production-like) | 4.087 | 1.0x | - | 8.21 |
+| **PowerInfer (Full)** | Predictor Head + Neuron-Level Sparsity + AVX | 0.353 | 11.6x | 0.73x | 95.0 |
+| **DSTA** | Sparse Ternary Accumulation (AVX-Optimized) | 0.257 | 15.9x | 1.0x (Baseline) | 130.7 |
+| **M4R (Hybrid)** | **Lattice Lookup + Quantization** | **0.073** | **56.2x** | **3.53x** | **461** |
+| **M4R (Pure)** | **Lattice Lookup (Pre-Quantized)** | **0.065** | **62.5x** | **3.92x** | **512** |
 
 > **Key Results**: 
-> - **M4R achieves 80x speedup** over dense GEMM and **4.3x speedup** over DSTA
-> - **Effective throughput**: ~515 GFLOPS on a single CPU core
+> - **M4R achieves 62.5x speedup** over dense GEMM and **3.9x speedup** over DSTA
+> - **Effective throughput**: ~512 GFLOPS on a single CPU core
 > - **M4R's advantage**: Replaces 8 multiply-adds with 1 memory lookup + 1 integer add
-> - **DSTA improvement**: Now **1.56x faster than PowerInfer** thanks to LUT-based weight expansion and FMA optimizations
+> - **DSTA improvement**: Now **1.38x faster than PowerInfer** thanks to LUT-based weight expansion and FMA optimizations
 
 > **Note on Baselines**: 
 > - **Dense GEMM**: Uses AVX-512/AVX2 SIMD optimizations (FMA instructions) similar to production BLAS libraries. Represents real-world optimized dense matrix multiplication.
@@ -129,34 +129,34 @@ Generating weights...
   Progress: 100.0%
 Loading weights into DSTA (Sparse Ternary)...
 Loading weights into M4R (Pre-computing Lattice)...
-M4R Compile Time: 1.80824s
+M4R Compile Time: 1.3996s
 Generating input (Density: 10%)...
 Warmup...
 
 === Running Benchmarks (50 iterations each) ===
 
 --- 1. Baseline: Dense GEMM (Realistic Optimized BLAS-like) ---
-Average Time: 5.27955 ms
-GFLOPS: 6.35554
+Average Time: 4.08717 ms
+GFLOPS: 8.20969
 
 --- 2. Baseline: PowerInfer (Realistic: Predictor Overhead + Neuron-Level Sparsity) ---
-Average Time: 0.43679 ms
-Speedup vs GEMM: 12.0872x
+Average Time: 0.35315 ms
+Speedup vs GEMM: 11.5735x
 
 --- 3. Our DSTA (Realistic: Sparsity Detection + Sparse Ternary AVX) ---
-Average Time: 0.280152 ms
-Speedup vs GEMM: 18.8453x
-Speedup vs PowerInfer: 1.55912x
+Average Time: 0.256572 ms
+Speedup vs GEMM: 15.9299x
+Speedup vs PowerInfer: 1.37642x
 
 --- 4. Our M4R (Realistic: Quantization Overhead + Lattice Lookup) ---
-Average Time: 0.065338 ms
-Speedup vs GEMM: 80.8037x
-Speedup vs DSTA: 4.28773x
+Average Time: 0.072674 ms
+Speedup vs GEMM: 56.2398x
+Speedup vs DSTA: 3.53045x
 
 --- 5. Our M4R (Best Case: Pre-Quantized Input, No Quantization Overhead) ---
-Average Time: 0.066512 ms
-Speedup vs GEMM: 79.3775x
-Speedup vs DSTA: 4.21205x
+Average Time: 0.065406 ms
+Speedup vs GEMM: 62.4893x
+Speedup vs DSTA: 3.92276x
 
 === Benchmark Complete ===
 ```
@@ -189,7 +189,7 @@ dsta-engine/
 
 ## 📊 Performance Analysis
 
-### Why M4R is Fastest (80x Speedup)
+### Why M4R is Fastest (62.5x Speedup)
 
 **M4R's Advantages:**
 1. **Lookup Table**: Replaces 8 multiply-adds with 1 memory load + 1 integer add
@@ -203,9 +203,9 @@ dsta-engine/
 **M4R's Trade-offs:**
 - ⚠️ **Memory Overhead**: Pre-computed lattice table (256 entries per chunk)
 - ⚠️ **Quantization Overhead**: Float → 4-bit conversion (but still faster overall)
-- ⚠️ **Compile Time**: ~1.8s for 4096×4096 layer (one-time cost during model load)
+- ⚠️ **Compile Time**: ~1.4s for 4096×4096 layer (one-time cost during model load)
 
-### Why DSTA is Faster Than PowerInfer (1.56x)
+### Why DSTA is Faster Than PowerInfer (1.38x)
 
 **DSTA's Advantages (After Optimization):**
 1. **LUT-Based Weight Expansion**: Pre-computed lookup table eliminates expensive bit extraction
@@ -323,7 +323,7 @@ dsta-engine/
 - **Realistic overheads** are included (sparsity detection, quantization, predictor heads)
 - **Matrix size**: 4096×4096 (typical for Llama-2/3 MLP layers)
 - **Input sparsity**: 10% active (90% zeros), typical for LLM activations
-- **M4R compile time**: ~1.8s for 4096×4096 layer (one-time cost during model load)
+- **M4R compile time**: ~1.4s for 4096×4096 layer (one-time cost during model load)
 - **Memory usage**: M4R requires ~67MB for lattice table (4096×4096 layer)
 
 ---
